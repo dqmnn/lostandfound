@@ -94,7 +94,7 @@ const createClaim = async (req, res) => {
 };
 
 // -------------------------------------------------------
-// @desc    Get all claims submitted by the logged-in user
+// @descc    Get all claims submitted by the logged-in user
 // @route   GET /api/claims/mine
 // @access  Private
 // -------------------------------------------------------
