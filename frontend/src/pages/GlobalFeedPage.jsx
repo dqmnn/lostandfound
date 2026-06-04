@@ -255,7 +255,8 @@ function ItemCard({ item, type, onClaimClick }) {
 
         {type === 'lost' && item.rewardAmount > 0 && (
           <div className="text-xs font-semibold text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-1.5 mb-3">
-            🏆 Reward: KES {item.rewardAmount.toLocaleString()}
+            <span>Payout:</span>
+            <span className="font-bold">KES {(item.rewardAmount * 0.8).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
           </div>
         )}
 
