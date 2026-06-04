@@ -158,11 +158,19 @@ const ItemCard = ({ item, type, onResolved }) => {
 
       {/* ── Meta row ── */}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
-        {item.category        && <span>📂 {item.category}</span>}
+        {item.category && <span>📂 {item.category}</span>}
         {item.locationGeneral && <span>📍 {item.locationGeneral}</span>}
         <span>🗓 {formatDate(item.dateReported)}</span>
+        
         {item.rewardAmount > 0 && (
-          <span className="text-amber-600 font-medium">🏆 KES {item.rewardAmount}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-amber-600 font-medium">
+              🏆 KES {item.rewardAmount} Offered
+            </span>
+            <span className="text-green-600 font-semibold bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
+              💸 Payout: KES {(item.rewardAmount * 0.8).toFixed(0)}
+            </span>
+          </div>
         )}
       </div>
 
