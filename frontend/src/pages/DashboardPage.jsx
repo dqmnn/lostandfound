@@ -5,6 +5,9 @@ import { getMyItems } from '../api/items';
 import { getMyClaims } from '../api/claims';
 import { mockPay, verifyOtp, getTransaction, getTransactionByItem } from '../api/payments';
 import { Link } from 'react-router-dom';
+import {
+  Laptop, Headphones, CreditCard, Watch, Tag, BookOpen, Pencil, Package,
+} from 'lucide-react';
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -22,17 +25,31 @@ const STATUS_STYLES = {
 };
 
 const CLAIM_STATUS_CONFIG = {
-  pending:  { label: 'Pending Admin Review',       style: 'bg-yellow-100 text-yellow-700' },
+  pending:  { label: 'Pending Admin Review',        style: 'bg-yellow-100 text-yellow-700' },
   approved: { label: 'Approved — Awaiting Payment', style: 'bg-green-100 text-green-600'  },
-  rejected: { label: 'Rejected',                   style: 'bg-red-100 text-red-500'       },
+  rejected: { label: 'Rejected',                    style: 'bg-red-100 text-red-500'       },
 };
 
-const CATEGORY_EMOJI = {
-  Electronics: '💻',
-  'ID/Cards':  '🪪',
-  Clothing:    '👕',
-  Books:       '📚',
-  Other:       '📦',
+const CATEGORY_ICON = {
+  'Electronics':       { icon: Laptop,     area: 'bg-blue-50',    color: 'text-blue-500'    },
+  'Light Electronics': { icon: Headphones, area: 'bg-violet-50',  color: 'text-violet-500'  },
+  'ID/Cards':          { icon: CreditCard, area: 'bg-amber-50',   color: 'text-amber-600'   },
+  'Accessories':       { icon: Watch,      area: 'bg-rose-50',    color: 'text-rose-500'    },
+  'Clothing':          { icon: Tag,        area: 'bg-teal-50',    color: 'text-teal-600'    },
+  'Books':             { icon: BookOpen,   area: 'bg-emerald-50', color: 'text-emerald-600' },
+  'Stationery':        { icon: Pencil,     area: 'bg-orange-50',  color: 'text-orange-500'  },
+  'Other':             { icon: Package,    area: 'bg-gray-100',   color: 'text-gray-400'    },
+};
+
+// Renders the coloured icon square used in card headers
+const CategoryIcon = ({ category, size = 16 }) => {
+  const cfg = CATEGORY_ICON[category] ?? CATEGORY_ICON['Other'];
+  const Icon = cfg.icon;
+  return (
+    <span className={`shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-lg ${cfg.area}`}>
+      <Icon size={size} className={cfg.color} />
+    </span>
+  );
 };
 
 const formatDate = (dateStr) =>
@@ -86,11 +103,11 @@ const EmptyClaimsState = () => (
 // The Found variant gains Stage 5 handoff UI when status === 'ready_for_handoff'
 
 const ItemCard = ({ item, type, onResolved }) => {
-  const [txData,     setTxData]     = useState(null);   // transaction payload from backend
-  const [txLoading,  setTxLoading]  = useState(false);
-  const [otpInput,   setOtpInput]   = useState('');
-  const [verifying,  setVerifying]  = useState(false);
-  const [verifyErr,  setVerifyErr]  = useState('');
+  const [txData,      setTxData]      = useState(null);
+  const [txLoading,   setTxLoading]   = useState(false);
+  const [otpInput,    setOtpInput]    = useState('');
+  const [verifying,   setVerifying]   = useState(false);
+  const [verifyErr,   setVerifyErr]   = useState('');
   const [localStatus, setLocalStatus] = useState(item.status);
 
   // Fetch transaction as soon as a found item enters ready_for_handoff
@@ -103,8 +120,7 @@ const ItemCard = ({ item, type, onResolved }) => {
         const res = await getTransactionByItem(item._id);
         setTxData(res.data);
       } catch {
-        // transaction not yet created or network error — silently fail,
-        // user can refresh; item status badge still shows correctly
+        // transaction not yet created or network error — silently fail
       } finally {
         setTxLoading(false);
       }
@@ -119,7 +135,7 @@ const ItemCard = ({ item, type, onResolved }) => {
     try {
       await verifyOtp(txData.claimId, otpInput.trim());
       setLocalStatus('resolved');
-      onResolved?.();           // bubble up so parent can refresh counts
+      onResolved?.();
     } catch (err) {
       setVerifyErr(err.response?.data?.message || 'Verification failed. Try again.');
     } finally {
@@ -136,14 +152,19 @@ const ItemCard = ({ item, type, onResolved }) => {
       {/* ── Header row ── */}
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex items-center gap-2 min-w-0">
-          <span
-            className={`shrink-0 text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${
-              type === 'lost' ? 'bg-rose-50 text-rose-500' : 'bg-teal-50 text-teal-600'
-            }`}
-          >
-            {type}
-          </span>
-          <h3 className="font-semibold text-gray-800 text-sm truncate">{item.title}</h3>
+          <CategoryIcon category={item.category} />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span
+                className={`shrink-0 text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${
+                  type === 'lost' ? 'bg-rose-50 text-rose-500' : 'bg-teal-50 text-teal-600'
+                }`}
+              >
+                {type}
+              </span>
+              <h3 className="font-semibold text-gray-800 text-sm truncate">{item.title}</h3>
+            </div>
+          </div>
         </div>
         <span
           className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${
@@ -158,10 +179,9 @@ const ItemCard = ({ item, type, onResolved }) => {
 
       {/* ── Meta row ── */}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
-        {item.category && <span>📂 {item.category}</span>}
+        {item.category        && <span>📂 {item.category}</span>}
         {item.locationGeneral && <span>📍 {item.locationGeneral}</span>}
         <span>🗓 {formatDate(item.dateReported)}</span>
-        
         {item.rewardAmount > 0 && (
           <div className="flex items-center gap-2">
             <span className="text-amber-600 font-medium">
@@ -189,7 +209,6 @@ const ItemCard = ({ item, type, onResolved }) => {
       {type === 'found' && localStatus === 'ready_for_handoff' && (
         <div className="mt-3 border border-teal-200 rounded-xl overflow-hidden">
 
-          {/* Section header */}
           <div className="bg-teal-50 px-4 py-2 border-b border-teal-100">
             <p className="text-xs font-bold uppercase tracking-wide text-teal-700">
               🤝 Handoff Ready — Owner has paid
@@ -198,7 +217,6 @@ const ItemCard = ({ item, type, onResolved }) => {
 
           <div className="px-4 py-3 space-y-4">
 
-            {/* Owner contact */}
             {txLoading ? (
               <div className="h-8 bg-gray-100 rounded animate-pulse" />
             ) : txData?.owner ? (
@@ -212,7 +230,6 @@ const ItemCard = ({ item, type, onResolved }) => {
               </div>
             ) : null}
 
-            {/* OTP input */}
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5">
                 Handshake Code
@@ -236,7 +253,7 @@ const ItemCard = ({ item, type, onResolved }) => {
                 <button
                   onClick={handleVerifyOtp}
                   disabled={otpInput.length !== 4 || verifying}
-                  className="px-4 py-2 bg-teal-600 text-black text-sm font-semibold rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-4 py-2 bg-teal-600 text-white text-sm font-semibold rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {verifying ? 'Verifying…' : 'Verify & Release Funds'}
                 </button>
@@ -272,16 +289,13 @@ const ClaimCard = ({ claim, onResolved }) => {
 
   const [paying,      setPaying]      = useState(false);
   const [payErr,      setPayErr]      = useState('');
-  const [txData,      setTxData]      = useState(null);   // populated after payment
+  const [txData,      setTxData]      = useState(null);
   const [txLoading,   setTxLoading]   = useState(false);
-  const [localStatus, setLocalStatus] = useState(status); // 'approved' | 'escrowed' | 'released'
+  const [localStatus, setLocalStatus] = useState(status);
 
   // If the transaction is already escrowed from a previous session, fetch it on mount
   useEffect(() => {
     if (localStatus !== 'approved') return;
-    // Check if the found item is already in a post-payment state
-    // (e.g. user refreshed mid-flow). We optimistically try to fetch
-    // the transaction; if it exists and is escrowed we surface the OTP panel.
     const tryFetch = async () => {
       setTxLoading(true);
       try {
@@ -304,7 +318,6 @@ const ClaimCard = ({ claim, onResolved }) => {
     setPayErr('');
     try {
       await mockPay(claim._id);
-      // Fetch the transaction immediately to get the OTP and Finder's phone
       const res = await getTransaction(claim._id);
       setTxData(res.data);
       setLocalStatus('escrowed');
@@ -315,19 +328,11 @@ const ClaimCard = ({ claim, onResolved }) => {
     }
   };
 
-  // Derive a display label that reflects live local status
   const displayConfig = (() => {
-    if (localStatus === 'escrowed')  return { label: 'Escrowed — Awaiting Handoff', style: 'bg-teal-100 text-teal-700' };
-    if (localStatus === 'released')  return { label: 'Resolved',                    style: 'bg-green-100 text-green-700' };
+    if (localStatus === 'escrowed') return { label: 'Escrowed — Awaiting Handoff', style: 'bg-teal-100 text-teal-700' };
+    if (localStatus === 'released') return { label: 'Resolved',                    style: 'bg-green-100 text-green-700' };
     return statusConfig;
   })();
-
-  // Right above your return statement:
-console.log("--- DEBUGGING CLAIM DATA ---");
-console.log("Full Claim Object:", claim); // Or whatever your prop/variable is named
-console.log("Found Item Data:", foundItem);
-console.log("Lost Item Data:", lostItem);
-console.log("Reward Calculation:", foundItem?.rewardAmount ?? lostItem?.rewardAmount ?? "FALLBACK TO 0");
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow">
@@ -335,9 +340,7 @@ console.log("Reward Calculation:", foundItem?.rewardAmount ?? lostItem?.rewardAm
       {/* ── Header row ── */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xl shrink-0">
-            {CATEGORY_EMOJI[foundItem?.category] || '📦'}
-          </span>
+          <CategoryIcon category={foundItem?.category} />
           <div className="min-w-0">
             <h3 className="font-semibold text-gray-800 text-sm truncate">
               {foundItem?.title || 'Unknown item'}
@@ -387,9 +390,9 @@ console.log("Reward Calculation:", foundItem?.rewardAmount ?? lostItem?.rewardAm
           <button
             onClick={handlePay}
             disabled={paying}
-            className="w-full py-2.5 bg-[#6C63FF] text-black text-sm font-semibold rounded-xl hover:bg-[#574fd6] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-2.5 bg-[#6C63FF] text-white text-sm font-semibold rounded-xl hover:bg-[#574fd6] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {paying ? 'Processing payment…' : `💳 Pay Reward — KES ${foundItem?.rewardAmount || lostItem?.rewardAmount || 9}`}
+            {paying ? 'Processing payment…' : `💳 Pay Reward — KES ${foundItem?.rewardAmount || lostItem?.rewardAmount || 0}`}
           </button>
           <p className="text-[10px] text-gray-400 text-center mt-1.5">
             Funds are held in escrow until you receive your item.
@@ -406,7 +409,6 @@ console.log("Reward Calculation:", foundItem?.rewardAmount ?? lostItem?.rewardAm
       {(localStatus === 'escrowed' || localStatus === 'released') && txData && (
         <div className="mt-3 border border-purple-200 rounded-xl overflow-hidden">
 
-          {/* Section header */}
           <div className="bg-purple-50 px-4 py-2 border-b border-purple-100">
             <p className="text-xs font-bold uppercase tracking-wide text-purple-700">
               💰 Payment Escrowed — Ready for Handoff
@@ -415,7 +417,6 @@ console.log("Reward Calculation:", foundItem?.rewardAmount ?? lostItem?.rewardAm
 
           <div className="px-4 py-3 space-y-4">
 
-            {/* Finder contact */}
             {txData.finder && (
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">
@@ -427,7 +428,6 @@ console.log("Reward Calculation:", foundItem?.rewardAmount ?? lostItem?.rewardAm
               </div>
             )}
 
-            {/* OTP code — large and bold for easy reading during handoff */}
             {localStatus === 'escrowed' && txData.otpCode && (
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">
@@ -444,7 +444,6 @@ console.log("Reward Calculation:", foundItem?.rewardAmount ?? lostItem?.rewardAm
               </div>
             )}
 
-            {/* Resolved state */}
             {localStatus === 'released' && (
               <p className="text-sm font-semibold text-green-700">
                 ✅ Handshake verified — item returned and payout sent.
