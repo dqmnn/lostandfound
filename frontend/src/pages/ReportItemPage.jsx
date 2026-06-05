@@ -241,7 +241,7 @@ export default function ReportItemPage() {
               </div>
 
               {/* Photo URL */}
-              {/* <div>
+               <div>
                 <label className="text-xs font-semibold text-gray-500 mb-1 block">
                   Generic Photo URL
                 </label>
@@ -256,7 +256,7 @@ export default function ReportItemPage() {
                 <p className="text-xs text-gray-400 mt-1 italic">
                   A general photo only — do not reveal identifying marks.
                 </p>
-              </div> */}
+              </div> 
 
               {/* Reward Amount — lost items only */}
               {isLost && (
